@@ -32,5 +32,5 @@ jobs:
           python -m unittest discover -s tests
         else
           echo "Nenhuma pasta de testes encontrada. Simulando checagem funcional básica..."
-          python -c "from todo_project import app; print('Aplicação importada com sucesso!')"
+          python -c "from todo_project.todo_project import app; print('Aplicação importada com sucesso!')"
         fi
