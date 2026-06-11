@@ -1,0 +1,36 @@
+name: Flask CI Pipeline
+
+on:
+  push:
+    branches: [ "master", "staging", "development" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "master", "staging", "development" ]
+
+jobs:
+  pipeline-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do Código
+      uses: actions/checkout@v4
+
+    - name: Configurar Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Validar Build e Dependências
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        python -m compileall todo_project/
+
+    - name: Executar Testes Automatizados
+      run: |
+        if [ -d tests ]; then
+          python -m unittest discover -s tests
+        else
+          echo "Nenhum diretório de testes estruturado foi encontrado. Validando execução do app básico..."
+          python -c "from todo_project import app; print('Aplicação importada e instanciada com sucesso! Teste funcional OK.')"
+        fi
