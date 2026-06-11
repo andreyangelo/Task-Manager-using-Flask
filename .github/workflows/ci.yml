@@ -31,6 +31,6 @@ jobs:
         if [ -d tests ]; then
           python -m unittest discover -s tests
         else
-          echo "Nenhum diretório de testes estruturado foi encontrado. Validando execução do app básico..."
-          python -c "from todo_project import app; print('Aplicação importada e instanciada com sucesso! Teste funcional OK.')"
+          echo "Nenhuma pasta de testes encontrada. Simulando checagem funcional básica..."
+          python -c "from todo_project import app; print('Aplicação importada com sucesso!')"
         fi
