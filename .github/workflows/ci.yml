@@ -27,25 +27,22 @@ jobs:
         python -m compileall todo_project/
 
     # ==========================================
-    # NOVA ETAPA: ANÁLISE ESTÁTICA DE SEGURANÇA (SAST)
+    # ETAPA 4: ANÁLISE ESTÁTICA DE SEGURANÇA (SAST)
     # ==========================================
     - name: Executar Bandit (Análise Estática de Código)
       run: |
         pip install bandit
-        # Analisa a pasta do projeto. O '-r' é recursivo e o '-ll' reporta falhas de nível médio/alto.
+        # Executa a análise estática na pasta do código fonte
         bandit -r todo_project/
 
-    - name: Executar OWASP Dependency-Check (Análise de Dependências)
-      uses: dependency-check/DependencyCheck-Action@main
-      id: DependencyCheck
-      with:
-        project: 'Task-Manager-using-Flask'
-        path: '.'
-        format: 'HTML'
-        out: 'reports' # Salva o relatório detalhado em uma pasta chamada reports
+    - name: Executar Análise de Dependências (Pip-Audit / OWASP)
+      run: |
+        pip install pip-audit
+        # Varre o requirements procurando pacotes vulneráveis conhecidos internacionalmente
+        pip-audit -r requirements.txt
 
     # ==========================================
-    # ETAPA DE TESTES (Sua validação antiga)
+    # ETAPA DE TESTES (Validação Estrutural)
     # ==========================================
     - name: Executar Testes Automatizados
       run: |
