@@ -26,22 +26,16 @@ jobs:
         pip install -r requirements.txt
         python -m compileall todo_project/
 
-    # ==========================================
-    # ETAPA 4: ANÁLISE ESTÁTICA DE SEGURANÇA (SAST)
-    # ==========================================
-    - name: Executar Bandit (Análise Estática de Código)
+    - name: Executar Bandit - SAST
       run: |
         pip install bandit
         bandit -r todo_project/
 
-    - name: Executar Análise de Dependências (Pip-Audit / OWASP)
+    - name: Executar Pip-Audit - Análise de Dependências
       run: |
         pip install pip-audit
         pip-audit -r requirements.txt
 
-    # ==========================================
-    # ETAPA DE TESTES (Validação Estrutural)
-    # ==========================================
     - name: Executar Testes Automatizados
       run: |
         if [ -d tests ]; then
@@ -51,42 +45,45 @@ jobs:
           python -m compileall todo_project/
         fi
 
-    # ==========================================
-    # ETAPA 5: ANÁLISE DINÂMICA DE SEGURANÇA (DAST) - COM DOCKER
-    # ==========================================
     - name: Construir Imagem Docker da Aplicação
       run: |
-        # Constrói a imagem a partir do seu Dockerfile
-        docker build -t minha-app-flask:latest .
+        docker build -t flask-task-manager .
 
-    - name: Iniciar Container da Aplicação para o DAST
+    - name: Iniciar Aplicação Flask em Container
       run: |
-        # Roda a aplicação mapeando a porta 8080 na rede do host em background (-d)
-        docker run -d --name app-container -p 8080:8080 minha-app-flask:latest
-        
-        # Aguarda 5 segundos para garantir que o Flask inicializou dentro do container
-        echo "Aguardando inicialização do container..."
-        sleep 5
-        curl -v http://localhost:8080 || (docker logs app-container && exit 1)
+        docker run -d \
+          --name flask-app \
+          -p 8080:8080 \
+          -e SECRET_KEY=test-secret \
+          flask-task-manager
 
-    - name: Executar OWASP ZAP Baseline Scan (DAST)
+        echo "Aguardando inicialização..."
+        sleep 10
+
+        curl -I http://localhost:8080/
+
+    - name: Executar OWASP ZAP Baseline Scan - DAST
       run: |
         mkdir -p zap-reports
         chmod 777 zap-reports
-        
-        # Executa o scan apontando para o container que está rodando na porta 8080
-        docker run --user root --network="host" -v $(pwd)/zap-reports:/zap/wrk/:rw ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+
+        docker run \
+          --user root \
+          --network="host" \
+          -v $(pwd)/zap-reports:/zap/wrk/:rw \
+          ghcr.io/zaproxy/zaproxy:stable \
+          zap-baseline.py \
           -t http://localhost:8080 \
           -r relatorio_dast.html \
           -I
-          
+
     - name: Parar Container da Aplicação
       if: always()
       run: |
-        docker stop app-container || true
-        docker rm app-container || true
+        docker stop flask-app || true
+        docker rm flask-app || true
 
-    - name: Arquivar Relatório do DAST (OWASP ZAP)
+    - name: Arquivar Relatório do DAST - OWASP ZAP
       if: always()
       uses: actions/upload-artifact@v4
       with:
