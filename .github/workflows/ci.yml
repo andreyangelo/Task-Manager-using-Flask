@@ -128,6 +128,38 @@ jobs:
           -r relatorio_dast_stage.html \
           -I
 
+    # ==========================================
+    # ETAPA 7: FEEDBACK E MONITORAMENTO
+    # ==========================================
+
+    - name: Monitoramento Pós-Implantação com Wazuh
+      run: |
+        echo "Iniciando monitoramento pós-implantação..."
+        echo "Ferramenta escolhida: Wazuh"
+        echo "Objetivo: analisar logs da aplicação em Stage e detectar anomalias."
+        echo "Exemplos de anomalias monitoradas:"
+        echo "- Tentativas de força bruta"
+        echo "- Múltiplas falhas de login"
+        echo "- Erros 403, 404 e 500"
+        echo "- Acessos suspeitos"
+
+        echo "Coletando logs do ambiente Stage..."
+        docker logs stage-app > wazuh-monitoring.log 2>&1 || true
+
+        echo "[INFO] Logs coletados para análise:"
+        cat wazuh-monitoring.log || true
+
+        echo "[ALERTA SIMULADO - WAZUH]"
+        echo "Possível tentativa de força bruta detectada: múltiplas falhas de autenticação em curto intervalo."
+
+    - name: Arquivar Logs de Monitoramento
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: logs-monitoramento-wazuh
+        path: wazuh-monitoring.log
+
+
     - name: Encerrar Ambiente Stage
       if: always()
       run: |
