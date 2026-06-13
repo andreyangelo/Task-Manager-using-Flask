@@ -89,3 +89,55 @@ jobs:
       with:
         name: relatorio-owasp-zap-dast
         path: zap-reports/relatorio_dast.html
+
+    # ==========================================
+    # ETAPA 6: ENTREGA CONTÍNUA (CD)
+    # ==========================================
+
+    - name: Criar Ambiente de Review
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "Criando ambiente temporário de revisão..."
+        echo "Review URL: https://review-${{ github.event.number }}.example.com"
+
+    - name: Deploy em Stage
+      run: |
+        echo "Realizando deploy para ambiente Stage..."
+
+        docker run -d \
+          --name stage-app \
+          -p 8081:8080 \
+          -e SECRET_KEY=stage-secret \
+          flask-task-manager
+
+        sleep 10
+
+        curl -I http://localhost:8081/
+
+    - name: Executar DAST no Ambiente Stage
+      run: |
+        mkdir -p zap-stage-reports
+
+        docker run \
+          --user root \
+          --network="host" \
+          -v $(pwd)/zap-stage-reports:/zap/wrk/:rw \
+          ghcr.io/zaproxy/zaproxy:stable \
+          zap-baseline.py \
+          -t http://localhost:8081 \
+          -r relatorio_dast_stage.html \
+          -I
+
+    - name: Encerrar Ambiente Stage
+      if: always()
+      run: |
+        docker stop stage-app || true
+        docker rm stage-app || true
+
+    - name: Arquivar Relatório DAST Stage
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: relatorio-owasp-zap-stage
+        path: zap-stage-reports/relatorio_dast_stage.html
+
